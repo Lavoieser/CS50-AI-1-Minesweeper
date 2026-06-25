@@ -101,28 +101,25 @@ class Sentence():
     def __str__(self):
         return f"{self.cells} = {self.count}"
 
-    def known_mines(self, mines):
+    def known_mines(self):
         """
         Returns the set of all cells in self.cells known to be mines.
         """
-        mines_set = set()
-        for element in self.cells:
-            if element in mines:
-                mines_set.add(element)
-        return mines_set
-        
+        # if count = len(self.cells), all neightbours are mines
+        if len(self.cells) == self.count and self.count > 0:
+            return set(self.cells)
+        return set()  
         
         #raise NotImplementedError
 
-    def known_safes(self, safes):
+    def known_safes(self):
         """
         Returns the set of all cells in self.cells known to be safe.
         """
-        safes_set = set()
-        for element in self.cells:
-            if element in (safes):
-                safes_set.add(element)
-        return safes_set
+        # If count = 0, all neighbours are safe
+        if self.count == 0:
+            return set(self.cells)
+        return set()
 
 
         # raise NotImplementedError
@@ -233,7 +230,7 @@ class MinesweeperAI():
                 # Add to knowledge if cell in bounds and not played and is not known_safe
                 if 0 <= i < self.height and 0 <= j < self.width:
                     # Check if neighbour has not been played and not a known safe
-                    if (i, j) not in self.moves_made and (i,j) not in self.safes:
+                    if ((i, j) not in self.moves_made) and ((i,j) not in self.safes):
                         new_set.add((i, j))
 
         # Avoid empty and repeat sentences
@@ -246,21 +243,14 @@ class MinesweeperAI():
             self.knowledge.append(s)     
 
         # Mark additionnal safes and mines based on the last move
-        # If count = 0, all neighbours are safe
-        # if count = len(self.cells), all neightbours are mines
         for sentence in self.knowledge:
-            if sentence.count == 0:
-                for cell in list(sentence.cells):
-                    self.mark_safe(cell)
+            safe_set = sentence.known_safes()
+            for cell in safe_set:
+                self.mark_safe(cell)
             
-            elif sentence.count == len(sentence.cells):
-                for cell in list(sentence.cells):
-                    self.mark_mine(cell)
-
-        free_safes = set()
-        for s in self.safes:
-            if s not in self.moves_made:
-                free_safes.add(s)
+            mine_set = sentence.known_mines()
+            for cell in mine_set:
+                self.mark_mine(cell)
 
     def inferred_knowledge(self):
         new_sentences = []
@@ -278,7 +268,7 @@ class MinesweeperAI():
                     if len(new_set) > 0:
                         new_sentence = Sentence(new_set, new_count)
 
-                        if new_sentence not in self.knowledge and new_sentence not in new_sentences:
+                        if (new_sentence not in self.knowledge) and (new_sentence not in new_sentences):
                             new_sentences.append(new_sentence)
 
         return new_sentences
